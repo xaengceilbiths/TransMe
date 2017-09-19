@@ -1,3 +1,4 @@
+#!/usr/bin/python2
 # -*- coding: utf-8 -*-
 """
 Date     : 2016/07/19 18:55:56
@@ -6,6 +7,7 @@ Author   : septicmk
 """
 
 import sys
+import re
 from PyQt4 import QtCore, QtGui
 from PyQt4.QtCore import Qt
 from PyQt4.QtWebKit import QWebView
@@ -19,7 +21,7 @@ class Info(QtGui.QWidget):
 
         self.resize(460,420)
         self.setStyleSheet("background-color:#3B4141;")
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool | Qt.X11BypassWindowManagerHint)
         #self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Popup)
 
         self.layout = QtGui.QVBoxLayout()
@@ -75,9 +77,16 @@ class Info(QtGui.QWidget):
         self.web_view.setHtml(html)
         self.web_view.reload()
         self.move(QtGui.QCursor.pos())
-        self.show()
-
-        translation,explains,web=yd.query(str(self.cpb.text(1).toUtf8()))
+        #self.show()
+        text=str(self.cpb.text(1).toUtf8())
+        text=''.join(text.split('-\n'))
+        text=''.join(re.split('[^a-zA-Z]*',text))
+        translation,explains,web=yd.query(text)
+        if translation == None:
+            if text != '':
+                if text[-1] == 's':
+                    text=text[0:-1]
+                    translation,explains,web=yd.query(text)
         if translation == None:
             html = u'''
             <style type="text/css">
@@ -90,6 +99,7 @@ class Info(QtGui.QWidget):
             </h2>
             '''
         else:
+            self.show()
             html = u'''
             <style type="text/css">
             body {
