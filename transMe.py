@@ -10,6 +10,7 @@ import sys
 import re
 from PyQt4 import QtCore, QtGui
 from PyQt4.QtCore import Qt
+from PyQt4.QtGui import QApplication
 from PyQt4.QtWebKit import QWebView
 import youdao_dict as yd
 
@@ -18,6 +19,9 @@ import imgs_rc
 class Info(QtGui.QWidget):
     def __init__(self, parent=None):
         super(Info, self).__init__(parent)
+
+        screen_resolution = QApplication.desktop().screenGeometry()
+        self.area_width, self.area_height = screen_resolution.width(), screen_resolution.height()
 
         self.resize(460,420)
         self.setStyleSheet("background-color:#3B4141;")
@@ -43,7 +47,7 @@ class Info(QtGui.QWidget):
         self.trayIcon.setContextMenu(self.trayIconMenu)
         self.trayIcon.setIcon(QtGui.QIcon(":/imgs/dictionary-icon.png"))
         self.trayIcon.show()
-        self.cpb = QtGui.QApplication.clipboard()
+        self.cpb = QApplication.clipboard()
         self.cpb.selectionChanged.connect(self.query)
 
         self.flag = True
@@ -76,11 +80,21 @@ class Info(QtGui.QWidget):
             '''
         self.web_view.setHtml(html)
         self.web_view.reload()
-        self.move(QtGui.QCursor.pos())
-        #self.show()
+
+        pos = QtGui.QCursor.pos()
+        posx, posy = pos.x(), pos.y()
+        if posx+460+20 > self.area_width:
+            posx = self.area_width - 460 - 20
+        if posy+420+20 > self.area_height:
+            posy = self.area_height - 420 - 20
+        self.move(QtCore.QPoint(posx, posy))
+        #self.move(QtGui.QCursor.pos())
+
         text=str(self.cpb.text(1).toUtf8())
         text=''.join(text.split('-\n'))
         text=''.join(re.split('[^a-zA-Z]*',text))
+        if len(text) <= 3:
+            text = ''
         translation,explains,web=yd.query(text)
         if translation == None:
             if text != '':
@@ -88,6 +102,7 @@ class Info(QtGui.QWidget):
                     text=text[0:-1]
                     translation,explains,web=yd.query(text)
         if translation == None:
+            self.hide()
             html = u'''
             <style type="text/css">
             body {
